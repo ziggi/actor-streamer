@@ -5,6 +5,7 @@ stock CreateDynamicActor(modelid, Float:x, Float:y, Float:z, Float:angle, worldi
 stock DestroyDynamicActor(actorid);
 
 stock IsDynamicActorStreamedIn(actorid, forplayerid);
+stock GetDynamicActorInternalID(actorid);
 
 stock SetDynamicActorVirtualWorld(actorid, vworld);
 stock GetDynamicActorVirtualWorld(actorid);
