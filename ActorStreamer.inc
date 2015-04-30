@@ -1,5 +1,11 @@
 /*
- *  Actor streamer by Emmet
+ *  ActorStreamer.inc
+ *  Allows you to stream actors in your server.
+ *
+ *  Contributors:
+ *    Emmet_
+ *    Abagail
+ *
  *  Created on April 30, 2015 @ 7:21 AM.
 */
 
@@ -48,6 +54,9 @@ static
 	s_DynamicActors[MAX_DYNAMIC_ACTORS][e_DynamicActors],
 	s_ActorAnimation[MAX_DYNAMIC_ACTORS][e_AnimationInfo]
 ;
+
+forward OnDynamicActorStreamIn(actorid, forplayerid);
+forward OnDynamicActorStreamOut(actorid, forplayerid);
 
 public OnFilterScriptExit()
 {
@@ -118,14 +127,14 @@ stock IsValidDynamicActor(actorid)
 	return 1;
 }
 
-stock GetDynamicActorSAMPID(actorid)
+stock GetDynamicActorInternalID(actorid)
 {
-	if(IsValidDynamicActor(actorid))
+	if (IsValidDynamicActor(actorid))
 	{
 	    return s_DynamicActors[actorid][e_iActorID];
 	}
 
-	else return INVALID_ACTOR_ID;
+	return INVALID_ACTOR_ID;
 }
 
 stock DestroyDynamicActor(actorid)
@@ -372,6 +381,11 @@ public OnActorStreamUpdate(actorid)
 			{
                 s_DynamicActors[actorid][e_iActorID] = CreateActor(s_DynamicActors[actorid][e_iActorModel], s_DynamicActors[actorid][e_fActorX], s_DynamicActors[actorid][e_fActorY], s_DynamicActors[actorid][e_fActorZ], s_DynamicActors[actorid][e_fActorA]);
 
+				if (s_DynamicActors[actorid][e_iActorID] == INVALID_ACTOR_ID)
+				{
+				    printf("[Error] Could not stream dynamic actor %d. The SA-MP limit has been reached.", actorid);
+				    return;
+				}
                 if (s_DynamicActors[actorid][e_iActorVirtual] != -1)
 				{
 				    // Applies the virtual world.
@@ -398,52 +412,40 @@ public OnActorStreamUpdate(actorid)
 
 public OnActorStreamIn(actorid, forplayerid)
 {
-	new static dynamicactor = INVALID_ACTOR_ID;
-    for(new x=0; x < MAX_DYNAMIC_ACTORS; x++)
+    for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
     {
-        if(!IsValidDynamicActor(x)) continue;
-		if(s_DynamicActors[x][e_iActorID] == actorid)
+        if (IsValidDynamicActor(i) && s_DynamicActors[i][e_iActorID] == actorid)
 		{
-		    dynamicactor = x;
+		    CallLocalFunction("OnDynamicActorStreamIn", "ii", i, forplayerid);
 		    break;
 		}
 	}
 
-	if(dynamicactor != INVALID_ACTOR_ID)
-	{
-	    CallLocalFunction("OnDynamicActorStreamIn", "dd", dynamicactor, forplayerid);
-	}
-
-	CallLocalFunction("AS_OnActorStreamIn", "dd", actorid, forplayerid);
-
-	return 1;
+	#if defined AS_OnActorStreamIn
+	    return AS_OnActorStreamIn(actorid, forplayerid);
+	#else
+	    return 1;
+	#endif
 }
 
 public OnActorStreamOut(actorid, forplayerid)
 {
-	new static dynamicactor = INVALID_ACTOR_ID;
-    for(new x=0; x < MAX_DYNAMIC_ACTORS; x++)
+	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
     {
-        if(!IsValidDynamicActor(x)) continue;
-		if(s_DynamicActors[x][e_iActorID] == actorid)
+        if (IsValidDynamicActor(i) && s_DynamicActors[i][e_iActorID] == actorid)
 		{
-		    dynamicactor = x;
+		    CallLocalFunction("OnDynamicActorStreamOut", "ii", i, forplayerid);
 		    break;
 		}
 	}
 
-	if(dynamicactor != INVALID_ACTOR_ID)
-	{
-	    CallLocalFunction("OnDynamicActorStreamOut", "dd", dynamicactor, forplayerid);
-	}
-
-	CallLocalFunction("AS_OnActorStreamOut", "dd", actorid, forplayerid);
-
-	return 1;
+	#if defined AS_OnActorStreamOut
+	    return AS_OnActorStreamOut(actorid, forplayerid);
+	#else
+	    return 1;
+	#endif
 }
 
-forward OnDynamicActorStreamIn(actorid, forplayerid);
-forward OnDynamicActorStreamOut(actorid, forplayerid);
 #if defined _ALS_OnFilterScriptExit
 	#undef OnFilterScriptExit
 #else
@@ -481,13 +483,14 @@ forward OnDynamicActorStreamOut(actorid, forplayerid);
 #endif
 
 #if defined _ALS_OnActorStreamOut
-	#undef OnActorStreamOutt
+	#undef OnActorStreamOut
 #else
 	#define _ALS_OnActorStreamOut
 #endif
 
 #define OnActorStreamOut AS_OnActorStreamOut
 
-#if defined AS_OnActorStreamIn
-	forward AS_OnActorStreamIn(actorid, forplayerid);
+#if defined AS_OnActorStreamOut
+	forward AS_OnActorStreamOut(actorid, forplayerid);
 #endif
+
