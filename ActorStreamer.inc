@@ -336,7 +336,7 @@ stock SetDynamicActorSkin(actorid, skinid)
 {
 	if (IsValidDynamicActor(actorid))
 	{
-	    s_DynamicActors[actorid][e_iActorModel] = actorid;
+	    s_DynamicActors[actorid][e_iActorModel] = skinid;
 
 	    if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
 	    {
