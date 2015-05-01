@@ -24,4 +24,7 @@ stock GetDynamicActorPos(actorid, &Float:x, &Float:y, &Float:z);
 
 native SetDynamicActorFacingAngle(actorid, Float:angle);
 native GetDynamicActorFacingAngle(actorid, &Float:angle);
+
+forward OnDynamicActorStreamIn(actorid, forplayerid);
+forward OnDynamicActorStreamOut(actorid, forplayerid);
 ```
