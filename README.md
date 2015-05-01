@@ -25,6 +25,15 @@ stock GetDynamicActorPos(actorid, &Float:x, &Float:y, &Float:z);
 native SetDynamicActorFacingAngle(actorid, Float:angle);
 native GetDynamicActorFacingAngle(actorid, &Float:angle);
 
+stock SetDynamicActorHealth(actorid, Float:health);
+stock GetDynamicActorHealth(actorid, &Float:health);
+
+stock SetDynamicActorInvulnerable(actorid, bool:invulnerable = true);
+stock IsDynamicActorInvulnerable(actorid);
+```
+
+```
 forward OnDynamicActorStreamIn(actorid, forplayerid);
 forward OnDynamicActorStreamOut(actorid, forplayerid);
+forward OnPlayerGiveDamageDynamicActor(playerid, actorid, Float:amount, weaponid, bodypart);
 ```
