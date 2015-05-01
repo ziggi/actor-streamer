@@ -35,7 +35,9 @@ enum e_DynamicActors
 	e_iActorVirtual,
 	e_iActorInterior,
 	e_iActorTimer,
-	e_iActorID
+	e_iActorID,
+	Float:e_fActorHealth,
+	bool:e_bInvulnerable
 };
 
 enum e_AnimationInfo
@@ -57,6 +59,7 @@ static
 
 forward OnDynamicActorStreamIn(actorid, forplayerid);
 forward OnDynamicActorStreamOut(actorid, forplayerid);
+forward OnPlayerGiveDamageDynamicActor(playerid, actorid, Float:amount, weaponid, bodypart);
 
 public OnFilterScriptExit()
 {
@@ -358,6 +361,63 @@ stock GetDynamicActorSkin(actorid)
 	return 0;
 }
 
+
+stock SetDynamicActorHealth(actorid, Float:health)
+{
+	if (IsValidDynamicActor(actorid))
+	{
+	    s_DynamicActors[actorid][e_fActorHealth] = health;
+	    
+	    if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
+	    {
+	        SetActorHealth(s_DynamicActors[actorid][e_iActorID], health);
+		}
+		return 1;
+	}
+	return 0;
+}
+
+stock GetDynamicActorHealth(actorid, &Float:health)
+{
+	if (IsValidDynamicActor(actorid))
+	{
+	    if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
+	    {
+	        GetActorHealth(actorid, health);
+		}
+		else
+		{
+		    health = s_DynamicActors[actorid][e_fActorHealth];
+		}
+		return 1;
+	}
+	return 0;
+}
+
+stock SetDynamicActorInvulnerable(actorid, invulnerable = true)
+{
+	if (IsValidDynamicActor(actorid))
+	{
+		s_DynamicActors[actorid][e_bInvulnerable] = invulnerable;
+		
+		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
+		{
+		    SetActorInvulnerable(actorid, invulnerable);
+		}
+		return 1;
+	}
+	return 0;
+}
+
+stock IsDynamicActorInvulnerable(actorid)
+{
+	if (IsValidDynamicActor(actorid))
+	{
+	    return s_DynamicActors[actorid][e_bInvulnerable];
+	}
+	return 0;
+}
+
 forward OnActorStreamUpdate(actorid);
 public OnActorStreamUpdate(actorid)
 {
@@ -396,6 +456,8 @@ public OnActorStreamUpdate(actorid)
                     // Applies the saved animation data.
                     ApplyActorAnimation(s_DynamicActors[actorid][e_iActorID], s_ActorAnimation[actorid][e_sAnimLibrary], s_ActorAnimation[actorid][e_sAnimName], s_ActorAnimation[actorid][e_fAnimDelta], true, s_ActorAnimation[actorid][e_iAnimLockX], s_ActorAnimation[actorid][e_iAnimLockY], s_ActorAnimation[actorid][e_iAnimFreeze], s_ActorAnimation[actorid][e_iAnimTime]);
 				}
+				SetActorInvulnerable(s_DynamicActors[actorid][e_iActorID], s_DynamicActors[actorid][e_bInvulnerable]);
+				SetActorHealth(s_DynamicActors[actorid][e_iActorID], s_DynamicActors[actorid][e_fActorHealth]);
 		    }
 		    break;
 		}
@@ -417,7 +479,7 @@ public OnActorStreamIn(actorid, forplayerid)
         if (IsValidDynamicActor(i) && s_DynamicActors[i][e_iActorID] == actorid)
 		{
 		    CallLocalFunction("OnDynamicActorStreamIn", "ii", i, forplayerid);
-		    break;
+      		break;
 		}
 	}
 
@@ -441,6 +503,23 @@ public OnActorStreamOut(actorid, forplayerid)
 
 	#if defined AS_OnActorStreamOut
 	    return AS_OnActorStreamOut(actorid, forplayerid);
+	#else
+	    return 1;
+	#endif
+}
+
+public OnPlayerGiveDamageActor(playerid, damaged_actorid, Float: amount, weaponid, bodypart)
+{
+	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
+	{
+	    if (IsValidDynamicActor(i) && s_DynamicActors[i][e_iActorID] == damaged_actorid)
+	    {
+	        CallLocalFunction("OnPlayerGiveDamageDynamicActor", "iifii", playerid, i, amount, weaponid, bodypart);
+			break;
+		}
+	}
+	#if defined AS_OnPlayerGiveDamageActor
+	    return AS_OnPlayerGiveDamageActor(playerid, damaged_actorid, amount, weaponid, bodypart);
 	#else
 	    return 1;
 	#endif
@@ -494,3 +573,14 @@ public OnActorStreamOut(actorid, forplayerid)
 	forward AS_OnActorStreamOut(actorid, forplayerid);
 #endif
 
+#if defined _ALS_OnPlayerGiveDamageActor
+	#undef OnPlayerGiveDamageActor
+#else
+	#define _ALS_OnPlayerGiveDamageActor
+#endif
+
+#define OnPlayerGiveDamageActor AS_OnPlayerGiveDamageActor
+
+#if defined AS_OnPlayerGiveDamageActor
+	forward AS_OnPlayerGiveDamageActor(playerid, damaged_actorid, Float: amount, weaponid, bodypart);
+#endif
