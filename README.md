@@ -1,5 +1,7 @@
 # actor-streamer
 
+Functions:
+
 ```
 stock CreateDynamicActor(modelid, Float:x, Float:y, Float:z, Float:angle, worldid = -1, interiorid = -1);
 stock DestroyDynamicActor(actorid);
@@ -22,8 +24,8 @@ stock ClearDynamicActorAnimations(actorid);
 stock SetDynamicActorPos(actorid, Float:x, Float:y, Float:z);
 stock GetDynamicActorPos(actorid, &Float:x, &Float:y, &Float:z);
 
-native SetDynamicActorFacingAngle(actorid, Float:angle);
-native GetDynamicActorFacingAngle(actorid, &Float:angle);
+stock SetDynamicActorFacingAngle(actorid, Float:angle);
+stock GetDynamicActorFacingAngle(actorid, &Float:angle);
 
 stock SetDynamicActorHealth(actorid, Float:health);
 stock GetDynamicActorHealth(actorid, &Float:health);
@@ -31,6 +33,8 @@ stock GetDynamicActorHealth(actorid, &Float:health);
 stock SetDynamicActorInvulnerable(actorid, bool:invulnerable = true);
 stock IsDynamicActorInvulnerable(actorid);
 ```
+
+Callbacks:
 
 ```
 forward OnDynamicActorStreamIn(actorid, forplayerid);
