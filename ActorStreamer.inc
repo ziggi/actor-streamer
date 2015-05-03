@@ -5,8 +5,11 @@
  *  Contributors:
  *    Emmet_
  *    Abagail
+ *    Kar
+ *    kvanningsen
  *
  *  Created on April 30, 2015 @ 7:21 AM.
+ *  Last updated on May 3, 2015.
 */
 
 // Maximum amount of allocated slots.
@@ -23,6 +26,10 @@
 #if !defined ACTOR_STREAM_TICK_RATE
 	#define ACTOR_STREAM_TICK_RATE      500
 #endif
+
+// Alternative names.
+#define GetDynamicActorModel(%0) GetDynamicActorSkin(%0)
+#define SetDynamicActorModel(%0) SetDynamicActorSkin(%0)
 
 enum e_DynamicActors
 {
