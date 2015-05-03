@@ -427,7 +427,7 @@ public OnActorStreamUpdate(actorid)
 	#if defined _inc_foreach
 	foreach (new i : Player)
 	#else
-	for (new i = 0; i <= GetPlayerPoolSize(); i ++)
+	for (new i = 0, j = GetPlayerPoolSize(); i <= j; ++i)
 	#endif
 	{
 	    // If the player is close to the actor...
