@@ -419,13 +419,13 @@ stock SetDynamicActorInvulnerable(actorid, bool:invulnerable = true)
 	return 0;
 }
 
-stock IsDynamicActorInvulnerable(actorid)
+stock bool:IsDynamicActorInvulnerable(actorid)
 {
 	if (IsValidDynamicActor(actorid))
 	{
 		return s_DynamicActors[actorid][e_bInvulnerable];
 	}
-	return 0;
+	return false;
 }
 
 forward OnActorStreamUpdate(actorid);
