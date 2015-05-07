@@ -61,7 +61,8 @@ enum e_AnimationInfo
 
 static
 	s_DynamicActors[MAX_DYNAMIC_ACTORS][e_DynamicActors],
-	s_ActorAnimation[MAX_DYNAMIC_ACTORS][e_AnimationInfo]
+	s_ActorAnimation[MAX_DYNAMIC_ACTORS][e_AnimationInfo],
+	s_DynamicActorsMap[MAX_ACTORS]
 ;
 
 forward OnDynamicActorStreamIn(actorid, forplayerid);
@@ -455,6 +456,8 @@ public OnActorStreamUpdate(actorid)
 					printf("[Error] Could not stream dynamic actor %d. The SA-MP limit has been reached.", actorid);
 					return;
 				}
+				s_DynamicActorsMap[ s_DynamicActors[actorid][e_iActorID] ] = actorid;
+
 				if (s_DynamicActors[actorid][e_iActorVirtual] != -1)
 				{
 					// Applies the virtual world.
@@ -476,6 +479,7 @@ public OnActorStreamUpdate(actorid)
 	{
 		// The actor is no longer streamed in for any players... so delete it then.
 		DestroyActor(s_DynamicActors[actorid][e_iActorID]);
+		s_DynamicActorsMap[ s_DynamicActors[actorid][e_iActorID] ] = INVALID_ACTOR_ID;
 
 		s_DynamicActors[actorid][e_iActorID] = INVALID_ACTOR_ID;
 	}
@@ -483,13 +487,10 @@ public OnActorStreamUpdate(actorid)
 
 public OnActorStreamIn(actorid, forplayerid)
 {
-	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
-	{
-		if (IsValidDynamicActor(i) && s_DynamicActors[i][e_iActorID] == actorid)
-		{
-			CallLocalFunction("OnDynamicActorStreamIn", "ii", i, forplayerid);
-	  		break;
-		}
+	new dyn_actorid = s_DynamicActorsMap[actorid];
+
+	if (IsValidDynamicActor(dyn_actorid) && s_DynamicActors[dyn_actorid][e_iActorID] == actorid) {
+		CallLocalFunction("OnDynamicActorStreamIn", "ii", dyn_actorid, forplayerid);
 	}
 
 	#if defined AS_OnActorStreamIn
@@ -501,13 +502,10 @@ public OnActorStreamIn(actorid, forplayerid)
 
 public OnActorStreamOut(actorid, forplayerid)
 {
-	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
-	{
-		if (IsValidDynamicActor(i) && s_DynamicActors[i][e_iActorID] == actorid)
-		{
-			CallLocalFunction("OnDynamicActorStreamOut", "ii", i, forplayerid);
-			break;
-		}
+	new dyn_actorid = s_DynamicActorsMap[actorid];
+
+	if (IsValidDynamicActor(dyn_actorid) && s_DynamicActors[dyn_actorid][e_iActorID] == actorid) {
+		CallLocalFunction("OnDynamicActorStreamOut", "ii", dyn_actorid, forplayerid);
 	}
 
 	#if defined AS_OnActorStreamOut
@@ -519,14 +517,12 @@ public OnActorStreamOut(actorid, forplayerid)
 
 public OnPlayerGiveDamageActor(playerid, damaged_actorid, Float: amount, weaponid, bodypart)
 {
-	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
-	{
-		if (IsValidDynamicActor(i) && s_DynamicActors[i][e_iActorID] == damaged_actorid)
-		{
-			CallLocalFunction("OnPlayerGiveDamageDynamicActor", "iifii", playerid, i, amount, weaponid, bodypart);
-			break;
-		}
+	new dyn_actorid = s_DynamicActorsMap[damaged_actorid];
+
+	if (IsValidDynamicActor(dyn_actorid) && s_DynamicActors[dyn_actorid][e_iActorID] == damaged_actorid) {
+		CallLocalFunction("OnPlayerGiveDamageDynamicActor", "iifii", playerid, dyn_actorid, amount, weaponid, bodypart);
 	}
+
 	#if defined AS_OnPlayerGiveDamageActor
 		return AS_OnPlayerGiveDamageActor(playerid, damaged_actorid, amount, weaponid, bodypart);
 	#else
