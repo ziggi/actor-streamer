@@ -3,7 +3,7 @@
 Functions:
 
 ```
-stock CreateDynamicActor(modelid, Float:x, Float:y, Float:z, Float:angle, worldid = -1, interiorid = -1);
+stock CreateDynamicActor(modelid, Float:x, Float:y, Float:z, Float:angle, worldid = -1, interiorid = -1, bool:invulnerable = true, Float:health = 100.0);
 stock DestroyDynamicActor(actorid);
 
 stock IsDynamicActorStreamedIn(actorid, forplayerid);
