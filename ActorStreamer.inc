@@ -104,7 +104,7 @@ public OnGameModeExit()
 	#endif
 }
 
-stock CreateDynamicActor(modelid, Float:x, Float:y, Float:z, Float:angle, worldid = -1, interiorid = -1)
+stock CreateDynamicActor(modelid, Float:x, Float:y, Float:z, Float:angle, worldid = -1, interiorid = -1, bool:invulnerable = true, Float:health = 100.0)
 {
 	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
 	{
@@ -118,6 +118,8 @@ stock CreateDynamicActor(modelid, Float:x, Float:y, Float:z, Float:angle, worldi
 			s_DynamicActors[i][e_fActorA] = angle;
 			s_DynamicActors[i][e_iActorVirtual] = worldid;
 			s_DynamicActors[i][e_iActorInterior] = interiorid;
+			s_DynamicActors[i][e_bInvulnerable] = invulnerable;
+			s_DynamicActors[i][e_fActorHealth] = health;
 			s_DynamicActors[i][e_iActorID] = INVALID_ACTOR_ID;
 
 			// Timer used for update checking.
@@ -401,7 +403,7 @@ stock GetDynamicActorHealth(actorid, &Float:health)
 	return 0;
 }
 
-stock SetDynamicActorInvulnerable(actorid, invulnerable = true)
+stock SetDynamicActorInvulnerable(actorid, bool:invulnerable = true)
 {
 	if (IsValidDynamicActor(actorid))
 	{
