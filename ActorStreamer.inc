@@ -443,11 +443,13 @@ public UpdateActorStream(actorid)
 		bool:is_in_range;
 
 #if defined _inc_foreach
-	foreach (new i : Player)
+	foreach (new i : Player) {
 #else
-	for (new i = GetPlayerPoolSize(); i != -1; i--)
+	for (new i = GetPlayerPoolSize(); i != -1; i--) {
+		if (!IsPlayerConnected(i) || IsPlayerNPC(i)) {
+			continue;
+		}
 #endif
-	{
 		// If the player is close to the actor...
 		if (IsDynamicActorInStreamRange(actorid, i)) {
 			// Indicate that this actor is streamed in.
