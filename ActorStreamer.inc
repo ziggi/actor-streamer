@@ -7,56 +7,59 @@
  *    Abagail
  *    Kar
  *    kvanningsen
+ *    ziggi
  *
  *  Created on April 30, 2015 @ 7:21 AM.
- *  Last updated on May 3, 2015.
+ *  Last updated on mar 9, 2016.
 */
 
 // Maximum amount of allocated slots.
 #if !defined MAX_DYNAMIC_ACTORS
-	#define MAX_DYNAMIC_ACTORS      2000
+	#define MAX_DYNAMIC_ACTORS 2000
 #endif
 
 // Maximum stream distance.
 #if !defined MAX_ACTOR_STREAM_DISTANCE
-	#define MAX_ACTOR_STREAM_DISTANCE   200.0
+	#define MAX_ACTOR_STREAM_DISTANCE 200.0
 #endif
 
 // Tick rate. Lower values mean more server power!
 #if !defined ACTOR_STREAM_TICK_RATE
-	#define ACTOR_STREAM_TICK_RATE      500
+	#define ACTOR_STREAM_TICK_RATE 500
 #endif
 
-// Alternative names.
-#define GetDynamicActorModel(%0) GetDynamicActorSkin(%0)
-#define SetDynamicActorModel(%0) SetDynamicActorSkin(%0)
+// Internal defines
+#define MAX_DYNAMIC_ACTOR_ANIM_LIB_NAME 32
+#define MAX_DYNAMIC_ACTOR_ANIM_NAME 32
 
-enum e_DynamicActors
-{
+// Alternative names.
+#define GetDynamicActorModel GetDynamicActorSkin
+#define SetDynamicActorModel SetDynamicActorSkin
+
+enum e_DynamicActors {
 	e_iSlotUsed,
 	e_iActorModel,
 	Float:e_fActorX,
 	Float:e_fActorY,
 	Float:e_fActorZ,
 	Float:e_fActorA,
-	e_iActorVirtual,
+	e_iActorWorld,
 	e_iActorInterior,
 	e_iActorTimer,
 	e_iActorID,
 	Float:e_fActorHealth,
-	bool:e_bInvulnerable
+	bool:e_bInvulnerable,
 };
 
-enum e_AnimationInfo
-{
+enum e_AnimationInfo {
 	bool:e_bAnimation,
-	e_sAnimLibrary[32 char],
-	e_sAnimName[32 char],
+	e_sAnimLibrary[MAX_DYNAMIC_ACTOR_ANIM_LIB_NAME char],
+	e_sAnimName[MAX_DYNAMIC_ACTOR_ANIM_NAME char],
 	Float:e_fAnimDelta,
 	e_iAnimLockX,
 	e_iAnimLockY,
 	e_iAnimFreeze,
-	e_iAnimTime
+	e_iAnimTime,
 };
 
 static
@@ -71,10 +74,8 @@ forward OnPlayerGiveDamageDynamicActor(playerid, actorid, Float:amount, weaponid
 
 public OnFilterScriptExit()
 {
-	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
-	{
-		if (s_DynamicActors[i][e_iSlotUsed])
-		{
+	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++) {
+		if (s_DynamicActors[i][e_iSlotUsed]) {
 			// Destroy all actors before unloading the filterscript.
 			DestroyDynamicActor(i);
 		}
@@ -89,10 +90,8 @@ public OnFilterScriptExit()
 
 public OnGameModeExit()
 {
-	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
-	{
-		if (s_DynamicActors[i][e_iSlotUsed])
-		{
+	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++) {
+		if (s_DynamicActors[i][e_iSlotUsed]) {
 			// Destroy all actors before gamemode exit.
 			DestroyDynamicActor(i);
 		}
@@ -107,34 +106,41 @@ public OnGameModeExit()
 
 stock CreateDynamicActor(modelid, Float:x, Float:y, Float:z, Float:angle, worldid = -1, interiorid = -1, bool:invulnerable = true, Float:health = 100.0)
 {
-	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++)
-	{
-		if (!s_DynamicActors[i][e_iSlotUsed])
-		{
-			s_DynamicActors[i][e_iSlotUsed] = 1;
-			s_DynamicActors[i][e_iActorModel] = modelid;
-			s_DynamicActors[i][e_fActorX] = x;
-			s_DynamicActors[i][e_fActorY] = y;
-			s_DynamicActors[i][e_fActorZ] = z;
-			s_DynamicActors[i][e_fActorA] = angle;
-			s_DynamicActors[i][e_iActorVirtual] = worldid;
-			s_DynamicActors[i][e_iActorInterior] = interiorid;
-			s_DynamicActors[i][e_bInvulnerable] = invulnerable;
-			s_DynamicActors[i][e_fActorHealth] = health;
-			s_DynamicActors[i][e_iActorID] = INVALID_ACTOR_ID;
+	new
+		slot = INVALID_ACTOR_ID;
 
-			// Timer used for update checking.
-			s_DynamicActors[i][e_iActorTimer] = SetTimerEx("OnActorStreamUpdate", ACTOR_STREAM_TICK_RATE, true, "i", i);
-			return i;
+	for (new i = 0; i < MAX_DYNAMIC_ACTORS; i ++) {
+		if (!s_DynamicActors[i][e_iSlotUsed]) {
+			slot = i;
+			break;
 		}
 	}
-	return INVALID_ACTOR_ID;
+
+	if (slot == INVALID_ACTOR_ID) {
+		return INVALID_ACTOR_ID;
+	}
+
+	s_DynamicActors[slot][e_iSlotUsed] = 1;
+	s_DynamicActors[slot][e_iActorModel] = modelid;
+	s_DynamicActors[slot][e_fActorX] = x;
+	s_DynamicActors[slot][e_fActorY] = y;
+	s_DynamicActors[slot][e_fActorZ] = z;
+	s_DynamicActors[slot][e_fActorA] = angle;
+	s_DynamicActors[slot][e_iActorWorld] = worldid;
+	s_DynamicActors[slot][e_iActorInterior] = interiorid;
+	s_DynamicActors[slot][e_bInvulnerable] = invulnerable;
+	s_DynamicActors[slot][e_fActorHealth] = health;
+	s_DynamicActors[slot][e_iActorID] = INVALID_ACTOR_ID;
+
+	// Timer used for update checking.
+	s_DynamicActors[slot][e_iActorTimer] = SetTimerEx("UpdateActorStream", ACTOR_STREAM_TICK_RATE, true, "i", i);
+
+	return slot;
 }
 
 stock IsValidDynamicActor(actorid)
 {
-	if (!(0 <= actorid < MAX_DYNAMIC_ACTORS) || (!s_DynamicActors[actorid][e_iSlotUsed]))
-	{
+	if (!(0 <= actorid < MAX_DYNAMIC_ACTORS) || (!s_DynamicActors[actorid][e_iSlotUsed])) {
 		return 0;
 	}
 	return 1;
@@ -142,347 +148,348 @@ stock IsValidDynamicActor(actorid)
 
 stock GetDynamicActorInternalID(actorid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		return s_DynamicActors[actorid][e_iActorID];
+	if (!IsValidDynamicActor(actorid)) {
+		return INVALID_ACTOR_ID;
 	}
-
-	return INVALID_ACTOR_ID;
+	return s_DynamicActors[actorid][e_iActorID];
 }
 
 stock DestroyDynamicActor(actorid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			// Destroy the actor if it is streamed.
-			DestroyActor(s_DynamicActors[actorid][e_iActorID]);
-		}
-		// Clear the animation info.
-		ClearDynamicActorAnimations(actorid);
-
-		// Free up the slot.
-		s_DynamicActors[actorid][e_iSlotUsed] = 0;
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	// Destroy the actor if it is streamed.
+	if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID) {
+		DestroyActor(s_DynamicActors[actorid][e_iActorID]);
+	}
+
+	// Clear the animation info.
+	ClearDynamicActorAnimations(actorid);
+
+	// Free up the slot.
+	s_DynamicActors[actorid][e_iSlotUsed] = 0;
+	return 1;
 }
 
-stock IsDynamicActorStreamedIn(actorid, forplayerid)
+stock bool:IsDynamicActorStreamedIn(actorid, forplayerid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		// Checks if the player is in range of the actor's position.
-		if (IsPlayerInRangeOfPoint(forplayerid, MAX_ACTOR_STREAM_DISTANCE, s_DynamicActors[actorid][e_fActorX], s_DynamicActors[actorid][e_fActorY], s_DynamicActors[actorid][e_fActorZ]))
-		{
-			// An additional check for interiors and virtual worlds.
-			if ((s_DynamicActors[actorid][e_iActorInterior] != -1 && GetPlayerInterior(forplayerid) != s_DynamicActors[actorid][e_iActorInterior]) || (s_DynamicActors[actorid][e_iActorVirtual] != -1 && GetPlayerVirtualWorld(forplayerid) != s_DynamicActors[actorid][e_iActorVirtual]))
-			{
-				return 0;
-			}
-			return 1;
-		}
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+	return s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID;
+}
+
+stock bool:IsDynamicActorInStreamRange(actorid, forplayerid)
+{
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
+	}
+
+	// Checks if the player is in range of the actor's position.
+	if (!IsPlayerInRangeOfPoint(forplayerid, MAX_ACTOR_STREAM_DISTANCE,
+			s_DynamicActors[actorid][e_fActorX],
+			s_DynamicActors[actorid][e_fActorY],
+			s_DynamicActors[actorid][e_fActorZ])) {
+		return 0;
+	}
+
+	// An additional check for interiors and virtual worlds.
+	new
+		interior,
+		world;
+
+	interior = s_DynamicActors[actorid][e_iActorInterior];
+	world = s_DynamicActors[actorid][e_iActorWorld];
+
+	if (interior != -1 && GetPlayerInterior(forplayerid) != interior) {
+		return 0;
+	}
+
+	if (world != -1 && GetPlayerVirtualWorld(forplayerid) != world) {
+		return 0;
+	}
+	return 1;
 }
 
 stock SetDynamicActorVirtualWorld(actorid, worldid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		s_DynamicActors[actorid][e_iActorVirtual] = worldid;
-
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			// If the actor is streamed, update their virtual world.
-			SetActorVirtualWorld(s_DynamicACtors[actorid][e_iActorID], worldid);
-		}
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	s_DynamicActors[actorid][e_iActorWorld] = worldid;
+
+	if (worldid != INVALID_ACTOR_ID) {
+		SetActorVirtualWorld(s_DynamicActors[actorid][e_iActorID], worldid);
+	}
+	return 1;
 }
 
 stock GetDynamicActorVirtualWorld(actorid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		return s_DynamicActors[actorid][e_iActorVirtual];
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+	return s_DynamicActors[actorid][e_iActorWorld];
 }
 
 stock SetDynamicActorInterior(actorid, interiorid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		s_DynamicActors[actorid][e_iActorInterior] = interiorid;
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+	s_DynamicActors[actorid][e_iActorInterior] = interiorid;
+	return 1;
 }
 
 stock GetDynamicActorInterior(actorid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		return s_DynamicActors[actorid][e_iActorInterior];
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+	return s_DynamicActors[actorid][e_iActorInterior];
 }
 
 stock ApplyDynamicActorAnimation(actorid, animlib[], animname[], Float:fDelta, loop, lockx, locky, freeze, time)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		if (loop)
-		{
-			// We want to save the looping animation so it plays when a player streams in.
-			strpack(s_ActorAnimation[actorid][e_sAnimLibrary], animlib, 32);
-			strpack(s_ActorAnimation[actorid][e_sAnimName], animname, 32);
-
-			s_ActorAnimation[actorid][e_bAnimation] = true;
-			s_ActorAnimation[actorid][e_fAnimDelta] = fDelta;
-			s_ActorAnimation[actorid][e_iAnimLockX] = lockx;
-			s_ActorAnimation[actorid][e_iAnimLockY] = locky;
-			s_ActorAnimation[actorid][e_iAnimFreeze] = freeze;
-			s_ActorAnimation[actorid][e_iAnimTime] = time;
-		}
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			// If the actor is streamed, apply the animation.
-			ApplyActorAnimation(s_DynamicActors[actorid][e_iActorID], animlib, animname, fDelta, loop, lockx, locky, freeze, time);
-		}
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	// We want to save the looping animation so it plays when a player streams in.
+	if (loop) {
+		strpack(s_ActorAnimation[actorid][e_sAnimLibrary], animlib, MAX_DYNAMIC_ACTOR_ANIM_LIB_NAME);
+		strpack(s_ActorAnimation[actorid][e_sAnimName], animname, MAX_DYNAMIC_ACTOR_ANIM_NAME);
+
+		s_ActorAnimation[actorid][e_bAnimation] = true;
+		s_ActorAnimation[actorid][e_fAnimDelta] = fDelta;
+		s_ActorAnimation[actorid][e_iAnimLockX] = lockx;
+		s_ActorAnimation[actorid][e_iAnimLockY] = locky;
+		s_ActorAnimation[actorid][e_iAnimFreeze] = freeze;
+		s_ActorAnimation[actorid][e_iAnimTime] = time;
+	}
+
+	// If the actor is streamed, apply the animation.
+	if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID) {
+		ApplyActorAnimation(s_DynamicActors[actorid][e_iActorID], animlib, animname, fDelta, loop, lockx, locky, freeze, time);
+	}
+	return 1;
 }
 
 stock ClearDynamicActorAnimations(actorid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		if (s_ActorAnimation[actorid][e_bAnimation])
-		{
-			// Reset the animation info.
-			s_ActorAnimation[actorid][e_bAnimation] = false;
-			s_ActorAnimation[actorid][e_fAnimDelta] = 0.0;
-			s_ActorAnimation[actorid][e_iAnimLockX] = 0;
-			s_ActorAnimation[actorid][e_iAnimLockY] = 0;
-			s_ActorAnimation[actorid][e_iAnimFreeze] = 0;
-			s_ActorAnimation[actorid][e_iAnimTime] = 0;
-		}
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			// If the actor is streamed, clear the animations.
-			ClearActorAnimations(s_DynamicActors[actorid][e_iActorID]);
-		}
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	// Reset the animation info.
+	if (s_ActorAnimation[actorid][e_bAnimation]) {
+		s_ActorAnimation[actorid][e_bAnimation] = false;
+		s_ActorAnimation[actorid][e_fAnimDelta] = 0.0;
+		s_ActorAnimation[actorid][e_iAnimLockX] = 0;
+		s_ActorAnimation[actorid][e_iAnimLockY] = 0;
+		s_ActorAnimation[actorid][e_iAnimFreeze] = 0;
+		s_ActorAnimation[actorid][e_iAnimTime] = 0;
+	}
+
+	// If the actor is streamed, clear the animations.
+	if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID) {
+		ClearActorAnimations(s_DynamicActors[actorid][e_iActorID]);
+	}
+	return 1;
 }
 
 stock SetDynamicActorPos(actorid, Float:x, Float:y, Float:z)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		s_DynamicActors[actorid][e_fActorX] = x;
-		s_DynamicActors[actorid][e_fActorY] = y;
-		s_DynamicActors[actorid][e_fActorZ] = z;
-
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			// If the actor is streamed, update the position.
-			SetActorPos(s_DynamicActors[actorid][e_iActorID], x, y, z);
-		}
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	s_DynamicActors[actorid][e_fActorX] = x;
+	s_DynamicActors[actorid][e_fActorY] = y;
+	s_DynamicActors[actorid][e_fActorZ] = z;
+
+	// If the actor is streamed, update the position.
+	if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID) {
+		SetActorPos(s_DynamicActors[actorid][e_iActorID], x, y, z);
+	}
+	return 1;
 }
 
 stock GetDynamicActorPos(actorid, &Float:x, &Float:y, &Float:z)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		x = s_DynamicActors[actorid][e_fActorX];
-		y = s_DynamicActors[actorid][e_fActorY];
-		z = s_DynamicActors[actorid][e_fActorZ];
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		x = 0.0;
+		y = 0.0;
+		z = 0.0;
+		return 0;
 	}
-	x = 0.0;
-	y = 0.0;
-	z = 0.0;
-	return 0;
+
+	x = s_DynamicActors[actorid][e_fActorX];
+	y = s_DynamicActors[actorid][e_fActorY];
+	z = s_DynamicActors[actorid][e_fActorZ];
+	return 1;
 }
 
 stock SetDynamicActorFacingAngle(actorid, Float:angle)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		s_DynamicActors[actorid][e_fActorA] = angle;
-
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			// If the actor is streamed, update the angle.
-			SetActorFacingAngle(s_DynamicActors[actorid][e_iActorID], angle);
-		}
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	s_DynamicActors[actorid][e_fActorA] = angle;
+
+	// If the actor is streamed, update the angle.
+	if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID) {
+		SetActorFacingAngle(s_DynamicActors[actorid][e_iActorID], angle);
+	}
+	return 1;
 }
 
 stock GetDynamicActorFacingAngle(actorid, &Float:angle)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		angle = s_DynamicActors[actorid][e_fActorA];
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		angle = 0.0;
+		return 0;
 	}
-	angle = 0.0;
-	return 0;
+
+	angle = s_DynamicActors[actorid][e_fActorA];
+	return 1;
 }
 
 stock SetDynamicActorSkin(actorid, skinid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		s_DynamicActors[actorid][e_iActorModel] = skinid;
-
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			// Re-stream the actor for the changes to occur.
-			DestroyActor(s_DynamicActors[actorid][e_iActorID]);
-
-			s_DynamicActors[actorid][e_iActorID] = INVALID_ACTOR_ID;
-
-			OnActorStreamUpdate(actorid);
-		}
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	s_DynamicActors[actorid][e_iActorModel] = skinid;
+
+	// Re-stream the actor for the changes to occur.
+	if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID) {
+		DestroyActor(s_DynamicActors[actorid][e_iActorID]);
+		s_DynamicActors[actorid][e_iActorID] = INVALID_ACTOR_ID;
+		UpdateActorStream(actorid);
+	}
+	return 1;
 }
 
 stock GetDynamicActorSkin(actorid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		return s_DynamicActors[actorid][e_iActorModel];
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+	return s_DynamicActors[actorid][e_iActorModel];
 }
-
 
 stock SetDynamicActorHealth(actorid, Float:health)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		s_DynamicActors[actorid][e_fActorHealth] = health;
-		
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			SetActorHealth(s_DynamicActors[actorid][e_iActorID], health);
-		}
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	s_DynamicActors[actorid][e_fActorHealth] = health;
+
+	if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID) {
+		SetActorHealth(s_DynamicActors[actorid][e_iActorID], health);
+	}
+	return 1;
 }
 
 stock GetDynamicActorHealth(actorid, &Float:health)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			GetActorHealth(actorid, health);
-		}
-		else
-		{
-			health = s_DynamicActors[actorid][e_fActorHealth];
-		}
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID) {
+		GetActorHealth(actorid, health);
+	} else {
+		health = s_DynamicActors[actorid][e_fActorHealth];
+	}
+
+	return 1;
 }
 
 stock SetDynamicActorInvulnerable(actorid, bool:invulnerable = true)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		s_DynamicActors[actorid][e_bInvulnerable] = invulnerable;
-		
-		if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-		{
-			SetActorInvulnerable(actorid, invulnerable);
-		}
-		return 1;
+	if (!IsValidDynamicActor(actorid)) {
+		return 0;
 	}
-	return 0;
+
+	s_DynamicActors[actorid][e_bInvulnerable] = invulnerable;
+
+	if (s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID) {
+		SetActorInvulnerable(actorid, invulnerable);
+	}
+	return 1;
 }
 
 stock bool:IsDynamicActorInvulnerable(actorid)
 {
-	if (IsValidDynamicActor(actorid))
-	{
-		return s_DynamicActors[actorid][e_bInvulnerable];
+	if (!IsValidDynamicActor(actorid)) {
+		return false;
 	}
-	return false;
+	return s_DynamicActors[actorid][e_bInvulnerable];
 }
 
-forward OnActorStreamUpdate(actorid);
-public OnActorStreamUpdate(actorid)
+forward UpdateActorStream(actorid);
+public UpdateActorStream(actorid)
 {
 	new
-		bool:bStreamed = false;
+		internal_actorid,
+		bool:is_in_range;
 
-	#if defined _inc_foreach
+#if defined _inc_foreach
 	foreach (new i : Player)
-	#else
-	for (new i = 0, j = GetPlayerPoolSize(); i <= j; ++i)
-	#endif
+#else
+	for (new i = GetPlayerPoolSize(); i != -1; i--)
+#endif
 	{
 		// If the player is close to the actor...
-		if (IsDynamicActorStreamedIn(actorid, i))
-		{
+		if (IsDynamicActorInStreamRange(actorid, i)) {
 			// Indicate that this actor is streamed in.
-			bStreamed = true;
-
-			// If the actor is not streamed yet, create it.
-   			if (s_DynamicActors[actorid][e_iActorID] == INVALID_ACTOR_ID)
-			{
-				s_DynamicActors[actorid][e_iActorID] = CreateActor(s_DynamicActors[actorid][e_iActorModel], s_DynamicActors[actorid][e_fActorX], s_DynamicActors[actorid][e_fActorY], s_DynamicActors[actorid][e_fActorZ], s_DynamicActors[actorid][e_fActorA]);
-
-				if (s_DynamicActors[actorid][e_iActorID] == INVALID_ACTOR_ID)
-				{
-					printf("[Error] Could not stream dynamic actor %d. The SA-MP limit has been reached.", actorid);
-					return;
-				}
-				s_DynamicActorsMap[ s_DynamicActors[actorid][e_iActorID] ] = actorid;
-
-				if (s_DynamicActors[actorid][e_iActorVirtual] != -1)
-				{
-					// Applies the virtual world.
-					SetActorVirtualWorld(s_DynamicActors[actorid][e_iActorID], s_DynamicActors[actorid][e_iActorVirtual]);
-				}
-				if (s_ActorAnimation[actorid][e_bAnimation])
-				{
-					// Applies the saved animation data.
-					ApplyActorAnimation(s_DynamicActors[actorid][e_iActorID], s_ActorAnimation[actorid][e_sAnimLibrary], s_ActorAnimation[actorid][e_sAnimName], s_ActorAnimation[actorid][e_fAnimDelta], true, s_ActorAnimation[actorid][e_iAnimLockX], s_ActorAnimation[actorid][e_iAnimLockY], s_ActorAnimation[actorid][e_iAnimFreeze], s_ActorAnimation[actorid][e_iAnimTime]);
-				}
-				SetActorInvulnerable(s_DynamicActors[actorid][e_iActorID], s_DynamicActors[actorid][e_bInvulnerable]);
-				SetActorHealth(s_DynamicActors[actorid][e_iActorID], s_DynamicActors[actorid][e_fActorHealth]);
-			}
+			is_in_range = true;
 			break;
 		}
 	}
 
-	if (!bStreamed && s_DynamicActors[actorid][e_iActorID] != INVALID_ACTOR_ID)
-	{
-		// The actor is no longer streamed in for any players... so delete it then.
-		DestroyActor(s_DynamicActors[actorid][e_iActorID]);
-		s_DynamicActorsMap[ s_DynamicActors[actorid][e_iActorID] ] = INVALID_ACTOR_ID;
+	internal_actorid = s_DynamicActors[actorid][e_iActorID];
 
-		s_DynamicActors[actorid][e_iActorID] = INVALID_ACTOR_ID;
+	// If the actor is streamed
+	if (internal_actorid != INVALID_ACTOR_ID) {
+		// The actor is no longer streamed in for any players... so delete it then.
+		if (!is_in_range) {
+			DestroyActor(internal_actorid);
+			s_DynamicActorsMap[internal_actorid] = INVALID_ACTOR_ID;
+			s_DynamicActors[internal_actorid][e_iActorID] = INVALID_ACTOR_ID;
+		}
+		return;
 	}
+
+	// If the actor is not streamed yet, create it.
+	internal_actorid = CreateActor(s_DynamicActors[actorid][e_iActorModel], s_DynamicActors[actorid][e_fActorX], s_DynamicActors[actorid][e_fActorY], s_DynamicActors[actorid][e_fActorZ], s_DynamicActors[actorid][e_fActorA]);
+
+	if (internal_actorid == INVALID_ACTOR_ID) {
+		printf("[Error] Could not stream dynamic actor %d. The SA-MP limit has been reached.", actorid);
+		return;
+	}
+	s_DynamicActorsMap[internal_actorid] = internal_actorid;
+
+	// Applies the virtual world.
+	if (s_DynamicActors[actorid][e_iActorWorld] != -1) {
+		SetActorVirtualWorld(internal_actorid, s_DynamicActors[actorid][e_iActorWorld]);
+	}
+
+	// Applies the saved animation data.
+	if (s_ActorAnimation[actorid][e_bAnimation]) {
+		ApplyActorAnimation(internal_actorid, s_ActorAnimation[actorid][e_sAnimLibrary], s_ActorAnimation[actorid][e_sAnimName], s_ActorAnimation[actorid][e_fAnimDelta], true, s_ActorAnimation[actorid][e_iAnimLockX], s_ActorAnimation[actorid][e_iAnimLockY], s_ActorAnimation[actorid][e_iAnimFreeze], s_ActorAnimation[actorid][e_iAnimTime]);
+	}
+
+	SetActorInvulnerable(internal_actorid, s_DynamicActors[actorid][e_bInvulnerable]);
+	SetActorHealth(internal_actorid, s_DynamicActors[actorid][e_fActorHealth]);
 }
 
 public OnActorStreamIn(actorid, forplayerid)

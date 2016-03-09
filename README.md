@@ -1,12 +1,22 @@
-# actor-streamer
+# ActorStreamer
 
-Functions:
+Allows you to stream actors in your server.
 
-```
+Contributors:
+- Emmet_
+- Abagail
+- Kar
+- kvanningsen
+- ziggi
+
+# Functions
+
+```Pawn
 stock CreateDynamicActor(modelid, Float:x, Float:y, Float:z, Float:angle, worldid = -1, interiorid = -1, bool:invulnerable = true, Float:health = 100.0);
 stock DestroyDynamicActor(actorid);
 
 stock bool:IsDynamicActorStreamedIn(actorid, forplayerid);
+stock bool:IsDynamicActorInStreamRange(actorid, forplayerid);
 stock GetDynamicActorInternalID(actorid);
 
 stock SetDynamicActorVirtualWorld(actorid, vworld);
@@ -31,12 +41,12 @@ stock SetDynamicActorHealth(actorid, Float:health);
 stock GetDynamicActorHealth(actorid, &Float:health);
 
 stock SetDynamicActorInvulnerable(actorid, bool:invulnerable = true);
-stock IsDynamicActorInvulnerable(actorid);
+stock bool:IsDynamicActorInvulnerable(actorid);
 ```
 
-Callbacks:
+# Callbacks
 
-```
+```Pawn
 forward OnDynamicActorStreamIn(actorid, forplayerid);
 forward OnDynamicActorStreamOut(actorid, forplayerid);
 forward OnPlayerGiveDamageDynamicActor(playerid, actorid, Float:amount, weaponid, bodypart);
