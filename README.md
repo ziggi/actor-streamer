@@ -1,3 +1,5 @@
+# Actor streamer was implemented in [streamer plugin](https://github.com/samp-incognito/samp-streamer-plugin) use this instead.
+
 # ActorStreamer
 
 Allows you to stream actors in your server.
